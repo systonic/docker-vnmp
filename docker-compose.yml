@@ -1,0 +1,51 @@
+version: '2'
+
+volumes:
+    database_data:
+        driver: local
+
+services:
+    nginx:
+        image: nginx:latest
+        depends_on:
+            - "php"
+        expose:
+            - 8080
+        ports:
+            - 8080:8080
+        volumes:
+            - ./nginx:/etc/nginx/conf.d
+        volumes_from:
+            - php
+
+    php:
+        build: ./php/
+        depends_on:
+            - "mysql"
+        expose:
+            - 9000
+        volumes:
+            - /var/www/html:/var/www/html
+
+    mysql:
+        image: mysql:latest
+        expose:
+            - 3306
+        ports:
+            - 3306:3306
+        volumes:
+            - database_data:/var/lib/mysql
+        environment:
+            MYSQL_ROOT_PASSWORD: root
+
+    varnish:
+        build: ./varnish/
+        depends_on:
+            - "nginx"
+        expose:
+            - 6082
+        ports:
+            - 80:80
+            - 6082:6082
+        volumes:
+            - ./varnish/default.vcl:/etc/varnish/default.vcl
